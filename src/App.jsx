@@ -6,9 +6,12 @@ import Search from "./components/Search";
 import GameCard from "./components/GameCard";
 import ErrorMessage from "./components/ErrorMessage";
 import Spinner from "./components/Spinner";
+import GameDetails from "./components/GameDetails";
 
 function App() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [showGameDetails, setShowGameDetails] = useState(false);
+  const [currentGame, setCurrentGame] = useState(null);
 
   const { data, loading, fetchData, error, reset } = useFetch(() =>
     fetchGames({ query: searchQuery })
@@ -37,7 +40,7 @@ function App() {
           onChange={(e) => setSearchQuery(e.target.value)}
         />
         <div className="w-full">
-          {!loading ? (
+          {!loading && !showGameDetails ? (
             <>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {data?.results.map(
@@ -50,7 +53,8 @@ function App() {
                         playtime={game.playtime}
                         genres={game.genres}
                         onClick={() => {
-                          console.log("test");
+                          setCurrentGame(game);
+                          setShowGameDetails(true);
                         }}
                       />
                     )
@@ -60,6 +64,14 @@ function App() {
                 <ErrorMessage message={"No games found!"} />
               )}
             </>
+          ) : showGameDetails ? (
+            <GameDetails
+              currentGame={currentGame}
+              goBack={() => {
+                setShowGameDetails(false);
+                setCurrentGame(null);
+              }}
+            />
           ) : (
             <div className="flex justify-center">
               <Spinner />
