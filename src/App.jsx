@@ -1,9 +1,29 @@
-import { useState } from "react"
-import logo from "/logo.png"
+import { useEffect, useState } from "react";
+import useFetch from "./hooks/useFetch";
+import { fetchGames } from "./api";
+import logo from "/logo.png";
 import Search from "./components/Search";
+import GameCard from "./components/GameCard";
+import ErrorMessage from "./components/ErrorMessage";
+import Spinner from "./components/Spinner";
 
 function App() {
   const [searchQuery, setSearchQuery] = useState("");
+
+  const { data, loading, fetchData, error, reset } = useFetch(() =>
+    fetchGames({ query: searchQuery })
+  );
+
+  useEffect(() => {
+    const timeoutId = setTimeout(async () => {
+      if (searchQuery.trim()) {
+        await fetchData();
+        return;
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
   return (
     <main className="w-full p-2 flex flex-col items-center">
@@ -12,13 +32,44 @@ function App() {
         <img src={logo} alt="Logo" className="w-25 h-25" />
       </div>
       <div className="w-full max-w-4xl">
-        <Search 
+        <Search
           query={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
+        <div className="w-full">
+          {!loading ? (
+            <>
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {data?.results.map(
+                  (game) =>
+                    game.added > 30 && (
+                      <GameCard
+                        key={game.slug}
+                        name={game.name}
+                        coverLink={game.background_image}
+                        playtime={game.playtime}
+                        genres={game.genres}
+                        onClick={() => {
+                          console.log("test");
+                        }}
+                      />
+                    )
+                )}
+              </div>
+              {data?.results.length === 0 && (
+                <ErrorMessage message={"No games found!"} />
+              )}
+            </>
+          ) : (
+            <div className="flex justify-center">
+              <Spinner />
+            </div>
+          )}
+          {error && <ErrorMessage message={"Network Error Occurred!"} />}
+        </div>
       </div>
     </main>
-  )
+  );
 }
 
-export default App
+export default App;
